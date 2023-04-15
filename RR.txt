@@ -1,0 +1,113 @@
+import java.util.ArrayList;
+        import java.util.LinkedList;
+        import java.util.Queue;
+        import java.util.Random;
+
+public class Simulation_RoundRobin{
+
+    public static void main(String[] args) {
+        int Processes = 10;
+        int slice_time = 5;
+        int simulationtime = 100;
+
+        ArrayList<Process> processes = generateProcesses(Processes);
+        Queue<Process> readyQueue = new LinkedList<Process>();
+        int time = 0;
+        double totalWaitingTime = 0;
+        double totalTurnaroundTime = 0;
+        int processescompleted = 0;
+
+        while (time < simulationtime || !readyQueue.isEmpty()) {
+            // Add new processes to the ready queue
+            for (Process p : processes) {
+                if (p.getArrivalTime() == time) {
+                    readyQueue.add(p);
+                }
+            }
+
+            if (!readyQueue.isEmpty()) {
+                // Get the next process from the ready queue
+                Process currentProcess = readyQueue.poll();
+
+                // Execute the process for a time slice
+                currentProcess.execute(slice_time);
+
+                if (currentProcess.isFinished()) {
+                    // Update the waiting time and turnaround time for the completed process
+                    totalWaitingTime += currentProcess.getWaitingTime();
+                    totalTurnaroundTime += currentProcess.getTurnaroundTime();
+                    processescompleted++;
+                } else {
+                    // Add the process back to the ready queue
+                    readyQueue.add(currentProcess);
+                }
+            }
+
+            time++;
+        }
+
+        double avgWaitingTime = totalWaitingTime / processescompleted;
+        double avgTurnaroundTime = totalTurnaroundTime / processescompleted;
+
+        System.out.println("Average Waiting Time is   " + avgWaitingTime);
+        System.out.println("Average Turnaround Time is  " + avgTurnaroundTime);
+    }
+
+    public static ArrayList<Process> generateProcesses(int numProcesses) {
+        ArrayList<Process> processes = new ArrayList<Process>();
+        Random rand = new Random();
+        int arrivalTime = 0;
+
+        for (int i = 0; i < numProcesses; i++) {
+            int cpuBurst = rand.nextInt(10) + 1;
+            processes.add(new Process(arrivalTime, cpuBurst));
+            arrivalTime += rand.nextInt(5) + 1;
+        }
+
+        return processes;
+    }
+
+}
+
+class Process {
+    private int arrivalTime;
+    private int cpuBurst;
+    private int remainingBurst;
+    private int waitingTime;
+    private int turnaroundTime;
+
+    public Process(int arrivalTime, int cpuBurst) {
+        this.arrivalTime = arrivalTime;
+        this.cpuBurst = cpuBurst;
+        this.remainingBurst = cpuBurst;
+        this.waitingTime = 0;
+        this.turnaroundTime = 0;
+    }
+
+    public int getArrivalTime() {
+        return arrivalTime;
+    }
+
+    public int getWaitingTime() {
+        return waitingTime;
+    }
+
+    public int getTurnaroundTime() {
+        return turnaroundTime;
+    }
+
+    public boolean isFinished() {
+        return remainingBurst == 0;
+    }
+
+    public void execute(int timeSlice) {
+        if (remainingBurst > timeSlice) {
+            remainingBurst -= timeSlice;
+        } else {
+            remainingBurst = 0;
+        }
+
+        waitingTime += timeSlice;
+        turnaroundTime += timeSlice;
+    }
+}
